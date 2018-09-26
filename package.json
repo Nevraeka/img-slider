@@ -1,0 +1,19 @@
+{
+  "name": "img-slider",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/img-slider.js",
+  "scripts": {
+    "build": "babel img-slider.js -o img-slider.dev.js --presets=@babel/env && parcel build img-slider.dev.js -d dist -o img-slider.min.js"
+  },
+  "author": "Erik Isaksen",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/cli": "^7.1.0",
+    "@babel/core": "^7.1.0",
+    "@babel/polyfill": "^7.0.0",
+    "@babel/preset-env": "^7.1.0",
+    "@babel/runtime": "^7.0.0",
+    "parcel": "^1.9.7"
+  }
+}
