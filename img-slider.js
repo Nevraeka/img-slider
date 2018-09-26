@@ -7,16 +7,13 @@
 
     (function () {
       if ( typeof window.CustomEvent === "function" ) { return false; }
-
       function CustomEvent ( event, params ) {
         params = params || { bubbles: true, cancelable: false, composed: true, detail: undefined };
         var evt = document.createEvent( 'CustomEvent' );
         evt.initCustomEvent( event, params.bubbles, params.cancelable, params.detail, params.composed );
         return evt;
        }
-
       CustomEvent.prototype = window.Event.prototype;
-
       window.CustomEvent = CustomEvent;
     })();
 
@@ -80,24 +77,15 @@
         get count() { return this.state.count; }
 
         connectedCallback(){
-
           if (this._root === null) {
             this._root = this.attachShadow({ mode: "open" });
           } else { 
-            this._root = this; }
+            this._root = this;
+          }
           this.state._width = this.getBoundingClientRect().width;
           this.state.count = findTotalCount(this);
-
           render(this);
-          
-          this.addEventListener('mousedown', lockImg, false);
-          this.addEventListener('touchstart', lockImg, false);
-          this.addEventListener('mouseup', moveImg, false);
-          this.addEventListener('touchend', moveImg, false);
-          this.addEventListener('touchmove', dragImg, false);
-          this.addEventListener('mousemove', dragImg, false);
-          this.addEventListener('resize', sizeImg.bind(this), false);
-          displayCounter(this, this.getAttribute('show-counter'));
+          this._root.querySelector('#main').addEventListener('slotchange', slotChangedHandler.bind(this));
         }
         
         attributeChangedCallback(name, oldVal, newVal){
@@ -133,12 +121,40 @@
             this.dispatchEvent(new CustomEvent('slide-changed', { detail: { selectedIndex: idx }, composed: true, bubbles: true }));
           }
         }
+
+        disconnectedCallback(){
+          this._root.querySelector('#main').removeEventListener('slotchange', slotChangedHandler.bind(this));
+          this._root.innerHTML = '';
+        }
         
       }
       window.customElements.define('img-slider', ImgSlider );
     }
   }
-  
+
+  function slotChangedHandler(e) {
+    this.state._width = this.getBoundingClientRect().width;
+    this.state.count = findTotalCount(this);
+    render(this);
+    this.$slide = this._root.querySelector('.img_slider__container');
+    this.$counter = this._root.querySelector('.img_slider__counter span');
+    this.removeEventListener('mousedown', lockImg, false);
+    this.addEventListener('mousedown', lockImg, false);
+    this.removeEventListener('touchstart', lockImg, false);
+    this.addEventListener('touchstart', lockImg, false);
+    this.removeEventListener('mouseup', moveImg, false);
+    this.addEventListener('mouseup', moveImg, false);
+    this.removeEventListener('touchend', moveImg, false);
+    this.addEventListener('touchend', moveImg, false);
+    this.removeEventListener('touchmove', dragImg, false);
+    this.addEventListener('touchmove', dragImg, false);
+    this.removeEventListener('mousemove', dragImg, false);
+    this.addEventListener('mousemove', dragImg, false);
+    this.removeEventListener('resize', sizeImg.bind(this), false);
+    this.addEventListener('resize', sizeImg.bind(this), false);
+    displayCounter(this, this.getAttribute('show-counter'));
+  }
+
   function displayCounter(component, newVal){
     if (component._root) {
       if(newVal === 'true') { component.$counter.style.display = 'flex'; }
@@ -193,7 +209,7 @@
   function render(component) {
     if(!component._root) { return; }
     if (window.ShadyCSS) { ShadyCSS.styleElement(component); }
-
+    if(component._root.children.length > 0) { component._root.innerHTML = '' };
     let $template = document.createElement('template');
     $template.innerHTML = `
       <style>
@@ -280,7 +296,7 @@
       <slot name="prev-action"></slot>
       <div class="img_slider__counter"><span data-index="${component.selectedIndex + 1}">of</span><img-icon shape="photoCollection" fill=100"></img-icon></div>
       <div class="img_slider__container" style="--img-slider--index: ${component.selectedIndex}">
-        <slot></slot>  
+        <slot id="main"></slot>  
       </div>
       <slot name="next-action"></slot>
       <slot name="custom-action"></slot>
@@ -288,8 +304,6 @@
 
     if (window.ShadyCSS) { ShadyCSS.prepareTemplate($template, 'img-slider'); }
     component._root.appendChild(document.importNode($template.content, true));
-    component.$slide = component._root.querySelector('.img_slider__container');
-    component.$counter = component._root.querySelector('.img_slider__counter span');
   }
 
 })(document, window);
